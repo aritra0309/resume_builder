@@ -15,10 +15,10 @@ artifact directory contains that mapping, plus the `.tex`, PDF, and validation r
 
 ## Install
 
-For an isolated command-line installation:
+Install directly from this GitHub repository (the package is not published to PyPI):
 
 ```bash
-pipx install resume-tailor
+pipx install --force "git+https://github.com/aritra0309/resume_builder.git"
 resume-tailor --version
 resume-tailor doctor
 ```
@@ -27,14 +27,14 @@ Markdown and text-PDF ingestion are included in the base package. To ingest DOCX
 optional extra instead:
 
 ```bash
-pipx install 'resume-tailor[docx]'
-# or: uv tool install 'resume-tailor[docx]'
+pipx install --force "resume-tailor[docx] @ git+https://github.com/aritra0309/resume_builder.git"
+# or: uv tool install --from "git+https://github.com/aritra0309/resume_builder.git" resume-tailor
 ```
 
 Or with uv:
 
 ```bash
-uv tool install resume-tailor
+uv tool install --from "git+https://github.com/aritra0309/resume_builder.git" resume-tailor
 resume-tailor doctor
 ```
 
