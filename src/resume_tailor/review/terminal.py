@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
+import questionary
 from rich.console import Console
 from rich.markup import escape
 
@@ -17,7 +18,7 @@ from resume_tailor.tailoring.grounding import check_claim
 def review_terminal(
     controller: ReviewController, console: Console, *, checkpoint: Path | None = None
 ) -> ReviewedContentPlan | None:
-    """Review all claims with keyboard commands, saving after every change."""
+    """Review all claims with arrow-key actions, saving after every change."""
     for index, claim in enumerate(controller.claim_list, 1):
         while True:
             warnings = check_claim(claim.proposed_text, claim.evidence_ids, controller.ledger)
@@ -32,54 +33,62 @@ def review_terminal(
                 f"Warnings: {escape(warning_text)}"
             )
             try:
-                answer = console.input(
-                    "[a]pprove [e]dit [r]eject [s]ource [c]hange evidence "
-                    "[v]iew context [d]efer [u]ndo redo-[x] [q]uit: "
-                ).strip()
+                answer = questionary.select(
+                    "Choose an action",
+                    choices=[
+                        questionary.Choice("Approve", value="approve"),
+                        questionary.Choice("Edit text", value="edit"),
+                        questionary.Choice("Reject", value="reject"),
+                        questionary.Choice("Restore source wording", value="source"),
+                        questionary.Choice("Change evidence IDs", value="evidence"),
+                        questionary.Choice("View source context", value="view"),
+                        questionary.Choice("Defer", value="defer"),
+                        questionary.Choice("Undo", value="undo"),
+                        questionary.Choice("Redo", value="redo"),
+                        questionary.Choice("Save and quit", value="quit"),
+                    ],
+                    default="approve",
+                ).ask()
             except (EOFError, KeyboardInterrupt):
                 if checkpoint is not None:
                     save_checkpoint(checkpoint, controller.session)
                 raise CancelledError(
                     "review cancelled", hint="The review draft was saved."
                 ) from None
-            command, _, value = answer.partition(" ")
-            command = command.lower()
-            if command in {"q", "quit"}:
+            if answer is None or answer == "quit":
                 if checkpoint is not None:
                     save_checkpoint(checkpoint, controller.session)
                 return None
-            if command in {"u", "undo", "x", "redo"}:
+            command = str(answer)
+            if command in {"undo", "redo"}:
                 try:
-                    (controller.undo if command in {"u", "undo"} else controller.redo)()
+                    (controller.undo if command == "undo" else controller.redo)()
                 except ValueError as exc:
                     console.print(f"[yellow]{escape(str(exc))}[/yellow]")
                 continue
-            if command in {"v", "view"}:
+            if command == "view":
                 console.print(f"Context: {escape(claim.source_text)}")
                 continue
             evidence_ids: list[str] | None = None
-            if command in {"c", "evidence"}:
+            if command == "evidence":
+                value = console.input("Comma-separated evidence IDs: ").strip()
                 evidence_ids = [item.strip() for item in value.split(",") if item.strip()]
                 if not evidence_ids:
-                    console.print("[yellow]Provide comma-separated evidence IDs after c.[/yellow]")
+                    console.print("[yellow]Provide at least one evidence ID.[/yellow]")
                     continue
-                command = "a"
+                command = "approve"
+            value = ""
+            if command == "edit":
+                value = console.input("Edited text: ").strip()
             action = {
-                "a": DecisionAction.APPROVE,
                 "approve": DecisionAction.APPROVE,
-                "e": DecisionAction.EDIT,
                 "edit": DecisionAction.EDIT,
-                "r": DecisionAction.REJECT,
                 "reject": DecisionAction.REJECT,
-                "s": DecisionAction.RESTORE_SOURCE,
                 "source": DecisionAction.RESTORE_SOURCE,
-                "d": DecisionAction.DEFER,
                 "defer": DecisionAction.DEFER,
             }.get(command)
             if action is None or (action is DecisionAction.EDIT and not value):
-                console.print(
-                    "[yellow]Enter an action; edit requires text after the command.[/yellow]"
-                )
+                console.print("[yellow]Edited text cannot be empty.[/yellow]")
                 continue
             try:
                 controller.decide(
