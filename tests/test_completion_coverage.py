@@ -331,7 +331,8 @@ def test_checkpoint_corruption_save_failures_and_hash_mismatches(
     session = review_controller.session
     path = tmp_path / "review.json"
     save_checkpoint(path, session)
-    assert os.stat(path).st_mode & 0o777 == 0o600
+    if os.name != "nt":
+        assert os.stat(path).st_mode & 0o777 == 0o600
     assert load_checkpoint(path) == session
     for value in ("{", "[]"):
         path.write_text(value)
