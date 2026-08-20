@@ -23,7 +23,7 @@ from resume_tailor.tailoring.requirements import analyze_terms
 
 @pytest.fixture
 def ledger() -> object:
-    return build_evidence_ledger(parse_markdown_cv(Path("Master_CV.md")))
+    return build_evidence_ledger(parse_markdown_cv(Path("tests/fixtures/test_master_cv.md")))
 
 
 def test_exact_acronym_and_fuzzy_term_matching(ledger: object) -> None:

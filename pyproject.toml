@@ -51,7 +51,7 @@ dev = [
 resume-tailor = "resume_tailor.cli:main"
 
 [project.urls]
-Repository = "https://github.com/aritra0309/resume-tailor"
+Repository = "https://github.com/aritra0309/resume_builder"
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/resume_tailor"]

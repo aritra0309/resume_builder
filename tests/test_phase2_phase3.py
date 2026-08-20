@@ -19,7 +19,7 @@ from resume_tailor.parsers.markdown_cv import parse_markdown_cv
 
 
 def test_master_cv_parses_to_deterministic_evidence() -> None:
-    source = Path("Master_CV.md")
+    source = Path("tests/fixtures/test_master_cv.md")
     first = build_evidence_ledger(parse_markdown_cv(source)).model_dump_json()
     second = build_evidence_ledger(parse_markdown_cv(source)).model_dump_json()
     assert first == second

@@ -111,7 +111,7 @@ def test_compiler_turns_timeout_and_engine_failure_into_diagnostics(
 def test_offline_end_to_end_flow_publishes_traceable_artifacts(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    source = Path("Master_CV.md")
+    source = Path("tests/fixtures/test_master_cv.md")
     evidence = build_evidence_ledger(parse_markdown_cv(source)).evidence[0]
     job = JobDescription(
         original_text="Data Engineer responsibilities include Python and SQL experience.",
@@ -178,13 +178,13 @@ def test_offline_end_to_end_flow_publishes_traceable_artifacts(
         client,
     )
     assert (result.artifact_dir / "resume.pdf").is_file()
-    assert "Master_CV.md" in (result.artifact_dir / "validation.md").read_text()
+    assert "test_master_cv.md" in (result.artifact_dir / "validation.md").read_text()
 
 
 def test_page_count_failure_triggers_one_grounded_revision(
     monkeypatch: pytest.MonkeyPatch, tmp_path: Path
 ) -> None:
-    source = Path("Master_CV.md")
+    source = Path("tests/fixtures/test_master_cv.md")
     evidence = build_evidence_ledger(parse_markdown_cv(source)).evidence[0]
     job = JobDescription(
         original_text="Python",

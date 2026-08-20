@@ -31,11 +31,11 @@ def _resume_text(value: str, highlights: list[str] | None = None) -> str:
     for term in terms + _METRIC.findall(value):
         escaped = escape_latex(term)
         if escaped:
+            def emphasize(_match: re.Match[str], text: str = escaped) -> str:
+                return rf"\textbf{{{text}}}"
+
             rendered = re.sub(
-                re.escape(escaped),
-                lambda _match: rf"\textbf{{{escaped}}}",
-                rendered,
-                flags=re.I,
+                re.escape(escaped), emphasize, rendered, flags=re.I
             )
     return rendered
 

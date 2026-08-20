@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+from typing import Any
 
 from pypdf import PdfReader
 
@@ -12,7 +13,7 @@ STANDARD_HEADINGS = ("summary", "experience", "education", "skills", "projects")
 MIN_ONE_PAGE_CONTENT_DEPTH = 0.86
 
 
-def _lowest_text_baseline(page: object) -> float | None:
+def _lowest_text_baseline(page: Any) -> float | None:
     """Return the lowest text baseline in PDF coordinates, including page transforms."""
     baselines: list[float] = []
 
