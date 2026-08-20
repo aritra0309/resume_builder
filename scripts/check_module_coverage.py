@@ -19,7 +19,9 @@ TARGETS = {
 
 def main() -> int:
     report = json.loads(Path(sys.argv[1] if len(sys.argv) > 1 else "coverage.json").read_text())
-    files = report["files"]
+    files = {
+        path.replace("\\", "/"): details for path, details in report["files"].items()
+    }
     failures = []
     for module, minimum in TARGETS.items():
         measured = files.get(module, {}).get("summary", {}).get("percent_covered", 0)
