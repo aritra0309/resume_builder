@@ -173,6 +173,20 @@ def _confirm(label: str, *, default: bool = True) -> bool:
     return bool(result)
 
 
+def _prompt_review_policy() -> ReviewPolicy:
+    """Choose whether the run should stop for a manual claim review."""
+    return ReviewPolicy(
+        _select_option(
+            "Claim review",
+            [
+                ("Automatically finalize using grounded evidence", ReviewPolicy.DISABLED.value),
+                ("Review every claim before creating the PDF", ReviewPolicy.REQUIRED.value),
+            ],
+            ReviewPolicy.DISABLED.value,
+        )
+    )
+
+
 @app.command("generate")
 def generate_command(
     master_cv: Annotated[Path | None, typer.Option("--master-cv", exists=False)] = None,
@@ -215,11 +229,6 @@ def generate_command(
             raise UsageError("non-interactive generate requires explicit --review disabled")
         if review is not ReviewPolicy.DISABLED and review_file is None:
             raise UsageError("non-interactive review requires an approved --review-file")
-    review = review or (ReviewPolicy.DISABLED if non_interactive else ReviewPolicy.REQUIRED)
-    if review_file is not None and review is ReviewPolicy.DISABLED:
-        raise UsageError(
-            "--review-file requires --review required or optional",
-        )
     del accept_ingestion_warnings
     config = load_config(
         cli_overrides={
@@ -284,10 +293,16 @@ def generate_command(
             ],
             config.tex_engine,
         )
+        review = review or _prompt_review_policy()
         if pages not in {"1", "2", "auto"}:
             raise UsageError("pages must be one of: 1, 2, auto")
         if not _confirm("Generate resume?", default=True):
             raise typer.Abort()
+    assert review is not None
+    if review_file is not None and review is ReviewPolicy.DISABLED:
+        raise UsageError(
+            "--review-file requires --review required or optional",
+        )
     assert master_cv is not None and provider is not None and model is not None
     assert output_dir is not None and pages is not None
     selected_provider = get_provider(provider)

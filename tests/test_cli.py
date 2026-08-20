@@ -54,6 +54,11 @@ def test_select_option_uses_keyboard_menu(monkeypatch: pytest.MonkeyPatch) -> No
     assert cli._select_option("Source", [("Paste", "paste")], "paste") == "paste"
 
 
+def test_interactive_review_defaults_to_automatic(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(cli, "_select_option", lambda *args, **kwargs: "disabled")
+    assert cli._prompt_review_policy().value == "disabled"
+
+
 def test_expected_error_boundary_has_no_traceback_by_default(
     monkeypatch: pytest.MonkeyPatch, capsys: pytest.CaptureFixture[str]
 ) -> None:

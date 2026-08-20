@@ -90,8 +90,8 @@ requires them. `resume-tailor auth status PROVIDER` reveals only the credential 
 `docx` extra. Image-only PDFs are deliberately rejected: Resume Tailor does not run OCR, because OCR
 can change facts and anchors. Export a searchable PDF, DOCX, or Markdown instead.
 
-The interactive wizard and claim-review step use arrow-key menus. Type only file paths, pasted
-job-description text, edited claims, or custom evidence IDs.
+The interactive wizard uses arrow-key menus. Type only file paths, pasted job-description text,
+edited claims, or custom evidence IDs.
 
 Start the guided wizard and follow its prompts for CV, JD source, provider, model,
 hidden key entry, page target, output, and TeX engine:
@@ -129,9 +129,10 @@ existing successful run is never overwritten.
 
 ### Review and resume
 
-Interactive generation requires review by default. The tool shows every generated claim, its source
-evidence, and a word-level diff; approve, edit, restore, reject, or defer it. Ingestion warnings (for
-example an ambiguous PDF layout) must be acknowledged before provider text is sent.
+Interactive generation automatically finalizes by default after its grounding and validation checks;
+you do not need to approve every claim. At the **Claim review** menu, select manual review only when
+you want to inspect every generated claim, its source evidence, and its word-level diff. Ingestion
+warnings (for example an ambiguous PDF layout) must be acknowledged before provider text is sent.
 
 Review drafts are local, hash-bound checkpoints containing the evidence needed to resume and the
 reviewed decisions. Keep them private. These commands work without provider credentials:
