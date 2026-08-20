@@ -1,0 +1,26 @@
+.DS_Store
+# Private inputs and credentials
+.env
+.env.*
+!.env.example
+Master_CV.md
+plan*.md
+*-jd.txt
+
+# Local development and generated artifacts
+.venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.coverage
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+build/
+dist/
+htmlcov/
+output/
+tmp/
+*.aux
+*.log
+*.out
