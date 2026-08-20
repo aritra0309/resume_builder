@@ -31,8 +31,27 @@ def test_auth_status_never_prints_secret(monkeypatch: object) -> None:
 
 
 def test_manager_status_value_is_only_source() -> None:
-    manager = CredentialManager(keyring_backend=None, environ={})
+    class EmptyKeyring:
+        def get_password(self, service_name: str, username: str) -> None:
+            del service_name, username
+            return None
+
+    manager = CredentialManager(keyring_backend=EmptyKeyring(), environ={})
     assert manager.status("deepseek") is None
+
+
+def test_prompt_path_strips_incidental_whitespace(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(cli.typer, "prompt", lambda *args, **kwargs: "  ~/resume.md  ")
+    assert cli._prompt_path("Master CV").as_posix().endswith("resume.md")
+
+
+def test_select_option_uses_keyboard_menu(monkeypatch: pytest.MonkeyPatch) -> None:
+    class Menu:
+        def ask(self) -> str:
+            return "paste"
+
+    monkeypatch.setattr(cli.questionary, "select", lambda *args, **kwargs: Menu())
+    assert cli._select_option("Source", [("Paste", "paste")], "paste") == "paste"
 
 
 def test_expected_error_boundary_has_no_traceback_by_default(

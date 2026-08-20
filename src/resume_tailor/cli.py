@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Annotated
 
 import click
+import questionary
 import typer
 from rich.console import Console
 from rich.table import Table
@@ -22,7 +23,7 @@ from resume_tailor.errors import ExitCode, ResumeTailorError, UsageError, Valida
 from resume_tailor.generation import GenerationRequest, IngestionBundle, PlanDraft
 from resume_tailor.generation import generate as run_generation
 from resume_tailor.llm.client import LLMClient
-from resume_tailor.llm.providers import get_provider
+from resume_tailor.llm.providers import PROVIDERS, get_provider
 from resume_tailor.models.review import ReviewedContentPlan, ReviewPolicy
 from resume_tailor.parsers.job_description import read_job_description, read_multiline_paste
 from resume_tailor.redaction import redact
@@ -147,7 +148,29 @@ def auth_status(provider: Annotated[str, typer.Argument(help="Provider name.")])
 
 def _prompt_path(label: str, default: Path | None = None) -> Path:
     value = typer.prompt(label, default=str(default) if default is not None else None)
-    return Path(value).expanduser()
+    normalized = value.strip()
+    if not normalized:
+        raise UsageError(f"{label.lower()} cannot be empty")
+    return Path(normalized).expanduser()
+
+
+def _select_option(label: str, choices: list[tuple[str, str]], default: str) -> str:
+    """Choose an interactive option with keyboard navigation instead of free-text input."""
+    result = questionary.select(
+        label,
+        choices=[questionary.Choice(title=title, value=value) for title, value in choices],
+        default=default,
+    ).ask()
+    if result is None:
+        raise typer.Abort()
+    return str(result)
+
+
+def _confirm(label: str, *, default: bool = True) -> bool:
+    result = questionary.confirm(label, default=default).ask()
+    if result is None:
+        raise typer.Abort()
+    return bool(result)
 
 
 @app.command("generate")
@@ -212,10 +235,14 @@ def generate_command(
     if not non_interactive:
         master_cv = master_cv or _prompt_path("Master CV", config.master_cv)
         if not supplied_jd:
-            source = (
-                typer.prompt("Job description source (file/paste/stdin)", default="paste")
-                .strip()
-                .lower()
+            source = _select_option(
+                "Job description source",
+                [
+                    ("Paste job description", "paste"),
+                    ("Read from a file", "file"),
+                    ("Read from standard input", "stdin"),
+                ],
+                "paste",
             )
             if source == "file":
                 jd = _prompt_path("Job description file")
@@ -226,15 +253,40 @@ def generate_command(
                 jd_text = read_multiline_paste(sys.stdin)
             else:
                 raise UsageError("job description source must be file, paste, or stdin")
-        provider = provider or typer.prompt("Provider", default=config.provider)
+        provider = provider or _select_option(
+            "Provider",
+            [(item.display_name, item.name) for item in PROVIDERS.values()],
+            config.provider,
+        )
         selected_provider = get_provider(provider)
-        model = model or typer.prompt("Model", default=selected_provider.default_models[0])
-        pages = pages or typer.prompt("Target length (1/2/auto)", default=config.pages)
+        model = model or _select_option(
+            "Model",
+            [(item, item) for item in selected_provider.default_models],
+            selected_provider.default_models[0],
+        )
+        pages = pages or _select_option(
+            "Target length",
+            [
+                ("One page", "1"),
+                ("Two pages", "2"),
+                ("Choose automatically", "auto"),
+            ],
+            config.pages,
+        )
         output_dir = output_dir or _prompt_path("Output directory", config.output_dir)
-        tex_engine = tex_engine or typer.prompt("TeX engine", default=config.tex_engine)
+        tex_engine = tex_engine or _select_option(
+            "TeX engine",
+            [
+                ("Automatically select", "auto"),
+                ("Tectonic", "tectonic"),
+                ("XeLaTeX", "xelatex"),
+                ("pdfLaTeX", "pdflatex"),
+            ],
+            config.tex_engine,
+        )
         if pages not in {"1", "2", "auto"}:
             raise UsageError("pages must be one of: 1, 2, auto")
-        if not typer.confirm("Generate resume?", default=True):
+        if not _confirm("Generate resume?", default=True):
             raise typer.Abort()
     assert master_cv is not None and provider is not None and model is not None
     assert output_dir is not None and pages is not None

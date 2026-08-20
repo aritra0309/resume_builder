@@ -90,6 +90,9 @@ requires them. `resume-tailor auth status PROVIDER` reveals only the credential 
 `docx` extra. Image-only PDFs are deliberately rejected: Resume Tailor does not run OCR, because OCR
 can change facts and anchors. Export a searchable PDF, DOCX, or Markdown instead.
 
+The interactive wizard uses arrow-key menus for choices such as provider, model, page length, and
+TeX engine. Type only file paths and pasted job-description text.
+
 Start the guided wizard and follow its prompts for CV, JD source, provider, model,
 hidden key entry, page target, output, and TeX engine:
 
